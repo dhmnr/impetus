@@ -1,14 +1,28 @@
 [tool.poetry]
-name = "llmperf"
+name = "gauge"
 version = "0.1.0"
 description = ""
 authors = ["Dheemanth Manur <dheemanthmanur72@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
+transformers = "4.40.2"
+numpy = "1.26.4"
+datasets = "^2.20.0"
+evaluate = "^0.4.2"
+torch = "2.3.1"
+accelerate = "^0.31.0"
+click = "^8.1.7"
+tqdm = "^4.66.5"
 
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+gauge = 'gauge.__main__:cli'
