@@ -1,5 +1,5 @@
 import click
-import time
+import torch
 
 from .models.decoderLm import DecoderLm
 
@@ -22,15 +22,22 @@ def cli():
 @click.option('--verbose', is_flag=True, help='Enable verbose output.')
 def benchmark(model, device, batch_size, seq_len, num_iterations, warmup_iterations, custom_model_path, output_format, save_trace, verbose):
     """Run LLM benchmark with specified options."""
+    if device == 'auto':
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(device)
     click.echo(f"Benchmarking {model} on {device}")
     click.echo(f"Batch size: {batch_size}, Sequence length: {seq_len}")
     click.echo(f"Running {num_iterations} iterations with {warmup_iterations} warmup iterations")
-    lm = DecoderLm(model)
+
+    lm = DecoderLm(model, device=device)
     metrics = lm.benchmark_inference(seq_len=seq_len)
 
     
-    click.echo("Benchmark completed. Results:")
+    click.echo("Benchmark completed.\n")
+    click.echo("****** Performance Metrics ******\n")
     click.echo(metrics)
+
     # click.echo("Average inference time: 10ms")
     # click.echo("Throughput: 100 sequences/second")
 
