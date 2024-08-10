@@ -15,6 +15,7 @@ torch = "2.3.1"
 accelerate = "^0.31.0"
 click = "^8.1.7"
 tqdm = "^4.66.5"
+bitsandbytes = "^0.43.3"
 
 
 [tool.poetry.group.dev.dependencies]

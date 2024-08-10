@@ -14,7 +14,7 @@ def cli():
 @click.option('--device', type=click.Choice(['cpu', 'cuda','auto']), default='auto', help='Device to run the benchmark on.')
 @click.option('--batch-size', type=int, default=1, help='Batch size for inference.')
 @click.option('--seq_len', type=int, default=128, help='Input sequence length.')
-@click.option('--precision', type=click.Choice(['4bit', '8bit', 'full']))
+@click.option('--precision', type=click.Choice(['4bit', '8bit', 'full']), default='full', help='Precison to use for the models')
 @click.option('--num-runs', type=int, default=10, help='Number of inference iterations.')
 @click.option('--warmup-runs', type=int, default=1, help='Number of warmup iterations.')
 @click.option('--custom-model-path', type=click.Path(exists=True), help='Path to custom model weights.')
@@ -31,8 +31,8 @@ def benchmark(model, device, batch_size, seq_len, precision, num_runs, warmup_ru
     click.echo(f"Batch size: {batch_size}, Sequence length: {seq_len}")
     click.echo(f"Running {num_runs} iterations with {warmup_runs} warmup iterations")
 
-    lm = DecoderLm(model, device=device, num_runs=num_runs, warmup_runs=warmup_runs)
-    metrics = lm.benchmark_inference(seq_len=seq_len)
+    lm = DecoderLm(model, device=device, precision=precision)
+    metrics = lm.benchmark_inference(seq_len=seq_len, num_runs=num_runs, warmup_runs=warmup_runs)
 
     
     click.echo("Benchmark completed.\n")
