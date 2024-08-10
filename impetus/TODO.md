@@ -1,4 +1,4 @@
-## Major
+## Major Changes
 
 - [ ] Support Quantization
 - [ ] Multiple GPU support
@@ -9,6 +9,5 @@
 - [ ] Support BERT and VLMs and others
 - [ ] Support different backends
 
-## Minor
-
+## Minor Fixes
 

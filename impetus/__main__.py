@@ -14,13 +14,14 @@ def cli():
 @click.option('--device', type=click.Choice(['cpu', 'cuda','auto']), default='auto', help='Device to run the benchmark on.')
 @click.option('--batch-size', type=int, default=1, help='Batch size for inference.')
 @click.option('--seq_len', type=int, default=128, help='Input sequence length.')
-@click.option('--num-iterations', type=int, default=100, help='Number of inference iterations.')
-@click.option('--warmup-iterations', type=int, default=10, help='Number of warmup iterations.')
+@click.option('--precision', type=click.Choice(['4bit', '8bit', 'full']))
+@click.option('--num-runs', type=int, default=10, help='Number of inference iterations.')
+@click.option('--warmup-runs', type=int, default=1, help='Number of warmup iterations.')
 @click.option('--custom-model-path', type=click.Path(exists=True), help='Path to custom model weights.')
 @click.option('--output-format', type=click.Choice(['text', 'json', 'csv']), default='text', help='Output format for results.')
 @click.option('--save-trace', is_flag=True, help='Save execution trace for profiling.')
 @click.option('--verbose', is_flag=True, help='Enable verbose output.')
-def benchmark(model, device, batch_size, seq_len, num_iterations, warmup_iterations, custom_model_path, output_format, save_trace, verbose):
+def benchmark(model, device, batch_size, seq_len, precision, num_runs, warmup_runs, custom_model_path, output_format, save_trace, verbose):
     """Run LLM benchmark with specified options."""
     if device == 'auto':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -28,9 +29,9 @@ def benchmark(model, device, batch_size, seq_len, num_iterations, warmup_iterati
         device = torch.device(device)
     click.echo(f"Benchmarking {model} on {device}")
     click.echo(f"Batch size: {batch_size}, Sequence length: {seq_len}")
-    click.echo(f"Running {num_iterations} iterations with {warmup_iterations} warmup iterations")
+    click.echo(f"Running {num_runs} iterations with {warmup_runs} warmup iterations")
 
-    lm = DecoderLm(model, device=device)
+    lm = DecoderLm(model, device=device, num_runs=num_runs, warmup_runs=warmup_runs)
     metrics = lm.benchmark_inference(seq_len=seq_len)
 
     

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "gauge"
+name = "impetus"
 version = "0.1.0"
 description = ""
 authors = ["Dheemanth Manur <dheemanthmanur72@gmail.com>"]
@@ -25,4 +25,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-gauge = 'gauge.__main__:cli'
+impetus = 'impetus.__main__:cli'
