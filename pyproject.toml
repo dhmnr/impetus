@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "impetus"
-version = "0.1.0"
-description = ""
+version = "0.1.1"
+description = "An awesome tool/library benchmark LLM performance on all kinds of hardware!"
 authors = ["Dheemanth Manur <dheemanthmanur72@gmail.com>"]
 readme = "README.md"
 

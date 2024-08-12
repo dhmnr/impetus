@@ -1,26 +1,31 @@
 import time
 import torch
 import warnings
+import itertools
 import numpy as np
 from tqdm import tqdm
 from datasets import load_dataset
 from accelerate import cpu_offload
 from transformers import BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import huggingface_hub
 
 import logging
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
 
 
-from ..metrics import DecoderLmMetrics
+from ..metrics import DecoderOnlyLanguageModelMetrics
 
 
-class DecoderLm:
+class DecoderOnlyLanguageModel:
     def __init__(self, model_name, device, precision) -> None:
 
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         if self.device.type == "cpu":
             self.model = AutoModelForCausalLM.from_pretrained(model_name)
@@ -36,20 +41,35 @@ class DecoderLm:
                 )
 
             elif precision == "full":
-                self.model = AutoModelForCausalLM.from_pretrained(model_name).to(
-                    self.device
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self.model = AutoModelForCausalLM.from_pretrained(model_name).to(
+                        self.device
+                    )
 
             else:
                 raise Exception(f"Invalid Precision : {precision}")
 
-    def benchmark_inference(self, seq_len, num_runs, warmup_runs) -> DecoderLmMetrics:
-        dataset = load_dataset("wikimedia/wikipedia", "20231101.en", streaming=True)
-        input_text = ""
-        while len(input_text) < seq_len:
-            input_text = next(iter(dataset["train"].shuffle()))["text"][:seq_len]
+    def benchmark_inference(
+        self, sequence_length, batch_size, num_runs, warmup_runs
+    ) -> DecoderOnlyLanguageModelMetrics:
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        input_ids = self.tokenizer(input_text, return_tensors="pt").to(self.device)
+        dataset = load_dataset("wikimedia/wikipedia", "20231101.en", streaming=True)
+        dataset_iter = iter(dataset["train"].shuffle())
+        input_texts = [
+            row["text"] for row in itertools.islice(dataset_iter, batch_size)
+        ]
+
+        input_ids = self.tokenizer(
+            input_texts,
+            return_tensors="pt",
+            max_length=sequence_length,
+            truncation=True,
+            padding=True,
+        ).to(self.device)
+
         # Warm-up run
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -89,9 +109,11 @@ class DecoderLm:
         throughput = avg_tokens_per_run / avg_latency
         time_per_output_token = (avg_latency - avg_ttft) / avg_tokens_per_run
 
-        return DecoderLmMetrics(
+        return DecoderOnlyLanguageModelMetrics(
+            seq_len=sequence_length,
+            batch_size=batch_size,
             latency=avg_latency,
-            avg_tokens=avg_tokens_per_run,
+            tokens_per_batch=avg_tokens_per_run,
             throughput=throughput,
             time_per_output_token=time_per_output_token,
             time_to_first_token=avg_ttft,
