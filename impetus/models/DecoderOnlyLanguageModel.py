@@ -4,12 +4,13 @@ import warnings
 import itertools
 import numpy as np
 from tqdm import tqdm
+import huggingface_hub
 from datasets import load_dataset
 from accelerate import cpu_offload
 from transformers import BitsAndBytesConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import huggingface_hub
-
+from accelerate import Accelerator
+from accelerate.utils import gather_object
 import logging
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
@@ -30,6 +31,8 @@ class DecoderOnlyLanguageModel:
         if self.device.type == "cpu":
             self.model = AutoModelForCausalLM.from_pretrained(model_name)
         else:
+            self.accelerator = Accelerator()
+            print(f"Benhcmarking using {self.accelerator.num_processes} GPUs..")
             if precision == "4bit":
                 self.model = AutoModelForCausalLM.from_pretrained(
                     model_name, load_in_4bit=True, device_map="auto"
@@ -43,9 +46,16 @@ class DecoderOnlyLanguageModel:
             elif precision == "full":
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    self.model = AutoModelForCausalLM.from_pretrained(model_name).to(
-                        self.device
-                    )
+                    if self.accelerator:
+                        self.model = AutoModelForCausalLM.from_pretrained(
+                            model_name,
+                            device_map={"": self.accelerator.process_index},
+                            torch_dtype=torch.bfloat16,
+                        )
+                    else:
+                        self.model = AutoModelForCausalLM.from_pretrained(
+                            model_name
+                        ).to(self.device)
 
             else:
                 raise Exception(f"Invalid Precision : {precision}")
@@ -82,7 +92,10 @@ class DecoderOnlyLanguageModel:
                 range(num_runs), desc="Measuring time to first token", unit="run"
             ):
                 start_time = time.time()
-                self.model.generate(**input_ids, max_new_tokens=1)
+                with self.accelerator.split_between_processes(
+                    input_ids
+                ) as input_ids_per_process:
+                    self.model.generate(**input_ids_per_process, max_new_tokens=1)
                 ttft_times.append(time.time() - start_time)
 
             avg_ttft = np.mean(ttft_times)
@@ -93,19 +106,22 @@ class DecoderOnlyLanguageModel:
             total_output_tokens = 0
             for _ in tqdm(range(num_runs), desc="Measuring latency", unit="run"):
                 start_time = time.time()
-                output = self.model.generate(
-                    **input_ids,
-                    max_new_tokens=100,
-                    return_dict_in_generate=True,
-                    output_scores=True,
-                )
+                with self.accelerator.split_between_processes(
+                    input_ids
+                ) as input_ids_per_process:
+                    output = self.model.generate(
+                        **input_ids,
+                        max_new_tokens=100,
+                        return_dict_in_generate=True,
+                        output_scores=True,
+                    )
                 latencies.append(time.time() - start_time)
                 total_output_tokens += len(output.sequences[0]) - len(input_ids[0])
 
         avg_latency = np.mean(latencies)
 
         # Calculate metrics
-        avg_tokens_per_run = total_output_tokens / num_runs
+        avg_tokens_per_run = (total_output_tokens) / num_runs
         throughput = avg_tokens_per_run / avg_latency
         time_per_output_token = (avg_latency - avg_ttft) / avg_tokens_per_run
 
@@ -114,7 +130,7 @@ class DecoderOnlyLanguageModel:
             batch_size=batch_size,
             latency=avg_latency,
             tokens_per_batch=avg_tokens_per_run,
-            throughput=throughput,
+            throughput=throughput * batch_size,
             time_per_output_token=time_per_output_token,
             time_to_first_token=avg_ttft,
         )
