@@ -1,230 +1,635 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/dhmnr/impetus/pull/73 -->
-<a id="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
+# ⚡ Impetus
 
-
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-<!-- [![LinkedIn][linkedin-shield]][linkedin-url] -->
-
-
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/dhmnr/impetus">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
-  <h3 align="center">Impetus</h3>
+**Comprehensive GPU Profiling & Characterization Tool for LLM Workloads**
 
-  <p align="center">
-    An awesome tool/library benchmark LLM performance on all kinds of hardware!
-    <br />
-    <a href="https://github.com/dhmnr/impetus"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/dhmnr/impetus">View Demo</a>
-    ·
-    <a href="https://github.com/dhmnr/impetus/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-    ·
-    <a href="https://github.com/dhmnr/impetus/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
-  </p>
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+
+*Profile your hardware from single GPUs to multi-node datacenters. Measure everything from application metrics (TPS, TTFT) down to CUDA kernel performance.*
+
 </div>
 
+---
 
+## 🎯 Overview
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+Impetus is a comprehensive profiling tool designed to characterize and benchmark LLM workloads on NVIDIA GPU hardware. Whether you're a researcher testing a new GPU, an enterprise validating a multi-node cluster, or a datacenter operator characterizing thousands of GPUs, Impetus provides deep insights into your hardware's LLM capabilities.
 
+### Key Features
 
+- **🔍 Multi-Level Profiling**: From application metrics down to CUDA kernels and warp occupancy
+- **🖥️ Hardware Characterization**: GPU utilization, memory bandwidth, power consumption, thermal profiling
+- **💾 Memory Analysis**: Detailed VRAM tracking, KV cache estimation, memory fragmentation analysis
+- **⚙️ System Metrics**: CPU, RAM, disk I/O, network bandwidth monitoring
+- **🧠 Model Analysis**: Architecture breakdown, parameter counting, layer-by-layer profiling
+- **📊 Theoretical Analysis**: Peak FLOPS, bandwidth calculations, roofline model, efficiency metrics
+- **🔗 Distributed Profiling**: TP/PP/DP communication overhead, NVLink/PCIe bandwidth
+- **🚀 Multiple Backends**: HuggingFace Transformers, vLLM, SGLang, TensorRT-LLM support
+- **📈 Rich Reporting**: Beautiful console output, JSON/CSV export, interactive HTML reports
+- **💡 Smart Recommendations**: Automatic bottleneck identification and optimization suggestions
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
-![Impetus Screen Shot](images/screenshot.png)
+---
 
+## 📦 Installation
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### Basic Installation
 
-
-
-
-
-<!-- GETTING STARTED -->
-## Getting Started
-
-### Installation
-
-Installation with pip is simple as follows:
-```sh
+Using pip:
+```bash
 pip install impetus
+
+# For CUDA support (Linux), install from PyTorch index
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 ```
 
-### Usage
+Using uv with **automatic CUDA detection** (recommended):
+```bash
+# Automatically detects your GPU and installs the right CUDA version
+uv pip install impetus --torch-backend=auto
+```
 
-![Impetus Help](images/impetus_help.png)
+Or manually specify CUDA version with uv:
+```bash
+# For CUDA 12.6-12.9 (PyTorch 2.8.0+ recommended)
+uv pip install impetus --index-url https://download.pytorch.org/whl/cu126
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+# For CUDA 12.4
+uv pip install impetus --index-url https://download.pytorch.org/whl/cu124
 
-## Developing locally
+# For CUDA 12.1
+uv pip install impetus --index-url https://download.pytorch.org/whl/cu121
 
-This project use poetry for dependency management, and is required for running impetus locally. 
+# For CUDA 11.8
+uv pip install impetus --index-url https://download.pytorch.org/whl/cu118
 
+# CPU-only
+uv pip install impetus --torch-backend=cpu
+```
 
+See [uv's PyTorch guide](https://docs.astral.sh/uv/guides/integration/pytorch/) for more options.
 
-1. Clone the repo
-   ```sh
+### With Optional Backend Support
+
+**⚠️ Linux Only**: vLLM and SGLang require Linux. On Windows, use WSL2 or stick with the HuggingFace backend.
+
+Using pip (Linux):
+```bash
+# Install with vLLM support
+pip install "impetus[vllm]"
+
+# Install with SGLang support
+pip install "impetus[sglang]"
+
+# Install with all backends (vLLM + SGLang)
+pip install "impetus[all-backends]"
+```
+
+Using uv (Linux):
+```bash
+# Install with vLLM support
+uv sync --extra vllm
+
+# Install with SGLang support  
+uv sync --extra sglang
+
+# Install with all backends (vLLM + SGLang)
+uv sync --extra all-backends
+```
+
+**Note**: Installing backends will automatically upgrade dependencies (like `transformers`) to compatible versions.
+
+### TensorRT-LLM Installation
+
+🚧 **Coming Soon**: TensorRT-LLM backend support is planned for v0.3.0.
+
+For now, TensorRT-LLM can be installed separately but is not yet integrated:
+
+```bash
+pip install --extra-index-url https://pypi.nvidia.com/ tensorrt-llm
+```
+
+### Development Installation
+
+```bash
+# Install uv if you haven't already
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install
    git clone https://github.com/dhmnr/impetus.git
-   ```
-2. Install Dependencies
-   ```sh
-   poetry install
-   ```
-3. Run the command as follows
-   ```sh
-   poetry shell run impetus --help
-   ```
+cd impetus
 
+# Sync with automatic CUDA detection
+UV_TORCH_BACKEND=auto uv sync
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+# Or manually specify CUDA version
+uv sync  # Uses CUDA 12.4 on Linux, CPU on macOS/Windows
+```
 
+---
 
+## 🎯 Supported Backends
 
+Impetus supports multiple inference backends for different use cases:
 
+| Backend | Platforms | Status | Installation |
+|---------|-----------|--------|--------------|
+| **HuggingFace** | Windows, Linux, macOS | ✅ Default | Included in base install |
+| **vLLM** | Linux only | ✅ Supported | `uv sync --extra vllm` |
+| **SGLang** | Linux only | ✅ Supported | `uv sync --extra sglang` |
+| **TensorRT-LLM** | Linux, Windows | 🚧 Coming Soon | Manual installation required |
 
-<!-- ROADMAP -->
-## Roadmap
+**Default Backend:** HuggingFace Transformers (works on all platforms)
 
-- [X] Support Quantization
-- [ ] Multiple GPU support with accelerate
-- [ ] GPU/CPU usage information
-- [ ] Flops/MFU information
-- [ ] Detailed breakdown, | self-attention | FFN | lm_head 
-- [ ] Support BERT and VLMs and others
-- [ ] Support different backends
+---
 
-## Minor Fixes
-- [ ] Support different datasets
+## 🚀 Quick Start
 
-See the [open issues](https://github.com/dhmnr/impetus/issues) for a full list of proposed features (and known issues).
+### Basic Benchmark
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+```bash
+# Benchmark a model with default settings
+impetus benchmark --model microsoft/phi-2
 
+# Specify precision and batch size
+impetus benchmark --model meta-llama/Llama-2-7b-hf --precision fp16 --batch-size 4
 
+# Use a different backend
+impetus benchmark --model mistralai/Mistral-7B-v0.1 --backend vllm --precision fp16
+```
 
-<!-- CONTRIBUTING -->
-## Contributing
+### System Information
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+```bash
+# Display hardware and system information
+impetus system-info
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+# Show detailed GPU topology and metrics
+impetus system-info --verbose
+```
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+### Export Results
 
-### Top contributors:
+```bash
+# Export to JSON
+impetus benchmark --model microsoft/phi-2 --output-format json --output-path results.json
 
-<a href="https://github.com/dhmnr/impetus/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=dhmnr/impetus" alt="contrib.rocks image" />
-</a>
+# Export to CSV
+impetus benchmark --model microsoft/phi-2 --output-format csv --output-path results.csv
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+# Generate interactive HTML report
+impetus benchmark --model microsoft/phi-2 --output-format html --output-path report.html
+```
 
+---
 
+## 📊 What Does Impetus Measure?
 
-<!-- LICENSE -->
-## License
+### Application-Level Metrics
+- **Latency**: Average, min, max, standard deviation
+- **Time to First Token (TTFT)**: Critical for interactive applications
+- **Throughput**: Tokens per second, batches per second
+- **Time per Output Token**: Generation speed per token
 
-Distributed under the MIT License. See `LICENSE` for more information.
+### Hardware Metrics (per GPU)
+- **Utilization**: GPU compute and memory utilization
+- **Memory**: Allocated, reserved, peak usage, total capacity
+- **Power**: Current draw, power limit, efficiency
+- **Temperature**: Operating temperature monitoring
+- **Clock Speeds**: SM clock, memory clock
+- **Interconnect**: PCIe bandwidth, NVLink topology and bandwidth
+- **Theoretical Performance**: Peak FLOPS (FP16/BF16/FP32), memory bandwidth
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### System Metrics
+- **CPU**: Usage percentage, core count, frequency
+- **RAM**: Total, used, available, utilization percentage
+- **Disk I/O**: Read/write throughput and IOPS
+- **Network**: Send/receive bandwidth and packet rates
 
+### Memory Profiling
+- **VRAM Allocation**: Real-time and peak GPU memory usage
+- **KV Cache**: Estimated size based on model architecture
+- **Parameter Memory**: Weight memory breakdown by layer
+- **Activation Memory**: Estimated activation memory requirements
+- **Memory Fragmentation**: Detection and analysis
 
+### CUDA-Level Metrics
+- **Kernel Execution**: Time per kernel, execution count
+- **Kernel Launch Overhead**: Overhead of launching CUDA kernels
+- **Memory Operations**: Memory copy time, allocation/deallocation counts
+- **Occupancy**: Theoretical and actual warp occupancy (when available)
 
-<!-- CONTACT -->
-## Contact
+### Model Architecture Analysis
+- **Parameter Counting**: Total, trainable, non-trainable parameters
+- **Layer Breakdown**: Memory and compute per layer
+- **Architecture Type**: Decoder-only, encoder-decoder detection
+- **Model Dimensions**: Hidden size, attention heads, vocabulary size
+- **FLOPs Estimation**: Estimated FLOPs per token
 
-<!-- Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com -->
+### Distributed System Profiling
+- **Topology Detection**: NVLink connections, multi-node setup
+- **Communication Latency**: All-reduce, all-gather, P2P operations
+- **Bandwidth Measurement**: Actual vs theoretical bandwidth
+- **Parallelism Overhead**: TP/PP/DP communication overhead
+- **Network Type Detection**: NVLink, InfiniBand, Ethernet
 
-Project Link: [https://github.com/dhmnr/impetus](https://github.com/dhmnr/impetus)
+### Theoretical Analysis
+- **Peak Performance**: Theoretical FLOPS and memory bandwidth
+- **Roofline Model**: Compute vs memory bound analysis
+- **Efficiency Metrics**: Actual/theoretical performance ratios
+- **Communication Time**: Estimated for different topologies
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
+### Local Development
 
+For local development without installing:
 
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
+```bash
+# Run directly with uv
+uv run impetus benchmark --model microsoft/phi-2
 
-Use this space to list resources you find helpful and would like to give credit to. I've included a few of my favorites to kick things off!
+# Or activate the virtual environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+impetus benchmark --model microsoft/phi-2
+```
 
-* [Choose an Open Source License](https://choosealicense.com)
-* [Img Shields](https://shields.io)
-* [GitHub Pages](https://pages.github.com)
+## 🏗️ Architecture
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Impetus is built with a modular architecture:
 
+```
+impetus/
+├── backends/           # Inference engine backends
+│   ├── huggingface.py  # HuggingFace Transformers (default)
+│   ├── vllm.py         # vLLM high-throughput backend
+│   ├── sglang.py       # SGLang backend
+│   └── tensorrt.py     # TensorRT-LLM backend
+├── profiling/          # Profiling modules
+│   ├── hardware.py     # GPU metrics via NVML
+│   ├── system.py       # System-wide metrics
+│   ├── memory.py       # Memory profiling
+│   ├── cuda.py         # CUDA kernel profiling
+│   ├── distributed.py  # Distributed communication profiling
+│   └── operators.py    # Layer-level profiling
+├── analysis/           # Analysis modules
+│   ├── theoretical.py  # Theoretical performance calculations
+│   └── model.py        # Model architecture analysis
+├── reporting/          # Output formats
+│   ├── console.py      # Rich terminal output
+│   ├── json_export.py  # JSON export
+│   ├── csv_export.py   # CSV export
+│   └── html.py         # Interactive HTML reports
+├── benchmark.py        # Main orchestrator
+└── __main__.py         # CLI entry point
+```
 
+---
 
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/dhmnr/impetus.svg?style=for-the-badge
-[contributors-url]: https://github.com/dhmnr/impetus/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/dhmnr/impetus.svg?style=for-the-badge
-[forks-url]: https://github.com/dhmnr/impetus/network/members
-[stars-shield]: https://img.shields.io/github/stars/dhmnr/impetus.svg?style=for-the-badge
-[stars-url]: https://github.com/dhmnr/impetus/stargazers
-[issues-shield]: https://img.shields.io/github/issues/dhmnr/impetus.svg?style=for-the-badge
-[issues-url]: https://github.com/dhmnr/impetus/issues
-[license-shield]: https://img.shields.io/github/license/dhmnr/impetus.svg?style=for-the-badge
-[license-url]: https://github.com/dhmnr/impetus/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/othneildrew
-[product-screenshot]: images/screenshot.png
-<!-- [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
-[Next-url]: https://nextjs.org/ -->
+## 💻 Command-Line Interface
 
+### `impetus benchmark`
+
+Run comprehensive LLM benchmark with hardware profiling.
+
+#### Options:
+- `--model TEXT`: Model name or path (required)
+- `--backend [huggingface|vllm|sglang|tensorrt]`: Inference backend (default: huggingface)
+- `--device [cpu|cuda|auto]`: Device to run on (default: auto)
+- `--batch-size INT`: Batch size for inference (default: 1)
+- `--sequence-length INT`: Input sequence length (default: 128)
+- `--max-new-tokens INT`: Maximum tokens to generate (default: 100)
+- `--precision [4bit|8bit|fp16|bf16|fp32]`: Model precision (default: fp16)
+- `--num-runs INT`: Number of benchmark iterations (default: 10)
+- `--warmup-runs INT`: Number of warmup iterations (default: 2)
+- `--profile-level [basic|detailed|comprehensive]`: Profiling detail level (default: detailed)
+- `--output-format [text|json|csv|html]`: Output format (default: text)
+- `--output-path PATH`: File path for output
+- `--verbose`: Enable verbose output with detailed profiling
+
+#### Examples:
+
+```bash
+# Basic benchmark
+impetus benchmark --model microsoft/phi-2
+
+# Production-like settings
+impetus benchmark \
+  --model meta-llama/Llama-2-7b-hf \
+  --backend vllm \
+  --precision fp16 \
+  --batch-size 8 \
+  --sequence-length 512 \
+  --max-new-tokens 200 \
+  --num-runs 50
+
+# Comprehensive profiling with all outputs
+impetus benchmark \
+  --model mistralai/Mistral-7B-v0.1 \
+  --precision bf16 \
+  --profile-level comprehensive \
+  --output-format html \
+  --output-path mistral_report.html \
+  --verbose
+```
+
+### `impetus system-info`
+
+Display detailed hardware and system information.
+
+#### Options:
+- `--verbose`: Show detailed system information and metrics
+
+#### Examples:
+
+```bash
+# Basic system info
+impetus system-info
+
+# Detailed info with current metrics
+impetus system-info --verbose
+```
+
+### `impetus compare` (Coming Soon)
+
+Compare multiple benchmark results side-by-side.
+
+---
+
+## 📈 Use Cases
+
+### 1. Research Lab: Testing New Hardware
+
+```bash
+# Characterize your new 8xA100 node
+impetus benchmark --model meta-llama/Llama-2-7b-hf --precision fp16 --batch-size 8 --verbose
+```
+
+**What you get:**
+- GPU utilization and memory patterns
+- NVLink topology and bandwidth
+- Bottleneck identification
+- Optimization recommendations
+
+### 2. Enterprise: Pre-Production Validation
+
+```bash
+# Validate cluster performance before deployment
+impetus benchmark \
+  --model your-org/custom-model \
+  --backend vllm \
+  --precision fp16 \
+  --batch-size 32 \
+  --output-format json \
+  --output-path validation_results.json
+```
+
+**What you get:**
+- Throughput at production batch sizes
+- Memory requirements validation
+- Cost-per-token estimates
+- Exportable results for analysis
+
+### 3. Datacenter: Infrastructure Characterization
+
+```bash
+# Profile different GPU configurations
+for gpu in A100 H100 L40; do
+  impetus benchmark \
+    --model meta-llama/Llama-2-70b-hf \
+    --backend vllm \
+    --precision fp16 \
+    --output-format csv \
+    --output-path ${gpu}_benchmark.csv
+done
+```
+
+**What you get:**
+- Comparative performance data
+- TCO analysis inputs
+- Infrastructure planning metrics
+- Capacity planning data
+
+### 4. Individual: Local Development
+
+```bash
+# Test model on your RTX 4090
+impetus benchmark --model microsoft/phi-2 --precision fp16 --batch-size 1
+```
+
+**What you get:**
+- Real-world inference speeds
+- Memory requirements
+- Thermal and power characteristics
+- Optimization tips for your hardware
+
+---
+
+## 🎨 Output Formats
+
+### Console (Terminal)
+
+Beautiful, colorful terminal output with tables and formatting:
+
+```
+═══════════════════════════════════════════════════════════════════════════════
+BENCHMARK RESULTS - microsoft/phi-2
+═══════════════════════════════════════════════════════════════════════════════
+
+Backend: huggingface
+Precision: fp16
+Timestamp: 2024-10-22 15:30:45
+
+INFERENCE METRICS
+───────────────────────────────────────────────────────────────────────────────
+  Batch Size: 1
+  Sequence Length: 128
+  Avg Latency: 45.23 ms
+  Time to First Token: 12.34 ms
+  Time per Output Token: 0.33 ms
+  Throughput: 3030.30 tokens/sec
+  ...
+```
+
+### JSON Export
+
+Structured data for programmatic analysis:
+
+```json
+{
+  "backend": "huggingface",
+  "model_name": "microsoft/phi-2",
+  "precision": "fp16",
+  "inference": {
+    "avg_latency_ms": 45.23,
+    "throughput_tokens_per_sec": 3030.30,
+    ...
+  },
+  "hardware": {
+    "gpu_metrics": [...],
+    ...
+  }
+}
+```
+
+### CSV Export
+
+Easy spreadsheet analysis:
+
+```csv
+timestamp,backend,model_name,precision,avg_latency_ms,throughput_tokens_per_sec,...
+2024-10-22T15:30:45,huggingface,microsoft/phi-2,fp16,45.23,3030.30,...
+```
+
+### HTML Report
+
+Interactive web-based reports with charts and visualizations:
+- Responsive design
+- Interactive Plotly charts
+- Detailed metrics tables
+- Color-coded recommendations
+- Exportable/shareable
+
+---
+
+## 🔧 Advanced Usage
+
+### Using as a Python Library
+
+```python
+from impetus import ComprehensiveBenchmark
+
+# Create benchmark instance
+benchmark = ComprehensiveBenchmark(
+    model_name="microsoft/phi-2",
+    backend="huggingface",
+    precision="fp16",
+    verbose=True
+)
+
+# Run benchmark
+results = benchmark.run(
+    batch_size=1,
+    sequence_length=128,
+    max_new_tokens=100,
+    num_runs=10
+)
+
+# Access results
+print(f"Throughput: {results.inference.throughput_tokens_per_sec:.2f} tokens/sec")
+print(f"Memory Usage: {results.memory.allocated_bytes / (1024**3):.2f} GB")
+
+# Export results
+from impetus.reporting import JSONExporter
+JSONExporter.export(results, "results.json")
+```
+
+### Custom Backend Configuration
+
+```python
+from impetus.backends import get_backend, BackendConfig
+import torch
+
+# Configure vLLM with tensor parallelism
+config = BackendConfig(
+    model_name="meta-llama/Llama-2-70b-hf",
+    device=torch.device("cuda"),
+    precision="fp16",
+    backend_kwargs={
+        "tensor_parallel_size": 4,
+        "gpu_memory_utilization": 0.9
+    }
+)
+
+backend = get_backend("vllm", config=config)
+```
+
+### Profiling Individual Components
+
+```python
+from impetus.profiling import HardwareProfiler, MemoryProfiler, CUDAProfiler
+
+# Hardware profiling
+hw_profiler = HardwareProfiler()
+gpu_info = hw_profiler.gpu_info
+current_metrics = hw_profiler.get_current_metrics()
+
+# Memory profiling
+mem_profiler = MemoryProfiler()
+snapshot = mem_profiler.get_current_snapshot()
+peak_stats = mem_profiler.get_peak_memory_stats()
+
+# CUDA profiling
+cuda_profiler = CUDAProfiler()
+result, metrics = cuda_profiler.profile_function(my_function, *args)
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Here's how you can help:
+
+1. **Bug Reports**: Open an issue with detailed information
+2. **Feature Requests**: Describe the feature and its use case
+3. **Pull Requests**: Fork, create a feature branch, and submit a PR
+4. **Documentation**: Help improve docs and examples
+5. **Testing**: Test on different hardware configurations
+
+### Development Setup
+
+```bash
+git clone https://github.com/dhmnr/impetus.git
+cd impetus
+uv sync --extra dev
+uv run pytest  # Run tests (when available)
+```
+
+---
+
+## 📄 License
+
+Impetus is released under the MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [PyTorch](https://pytorch.org/)
+- Hardware profiling via [NVML](https://developer.nvidia.com/nvidia-management-library-nvml)
+- Beautiful terminal output with [Rich](https://rich.readthedocs.io/)
+- Visualizations with [Plotly](https://plotly.com/)
+- Backend integrations: [HuggingFace](https://huggingface.co/), [vLLM](https://github.com/vllm-project/vllm), [SGLang](https://github.com/sgl-project/sglang), [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM)
+
+---
+
+## 📚 Citation
+
+If you use Impetus in your research, please cite:
+
+```bibtex
+@software{impetus2024,
+  title = {Impetus: Comprehensive GPU Profiling for LLM Workloads},
+  author = {Manur, Dheemanth},
+  year = {2024},
+  url = {https://github.com/dhmnr/impetus}
+}
+```
+
+---
+
+## 📞 Contact
+
+- **Issues**: [GitHub Issues](https://github.com/dhmnr/impetus/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/dhmnr/impetus/discussions)
+
+---
+
+<div align="center">
+
+**⚡ Impetus** - *Know Your Hardware, Optimize Your LLMs*
+
+Made with ❤️ by [Dheemanth Manur](https://github.com/dhmnr)
+
+</div>
