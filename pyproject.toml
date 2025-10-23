@@ -1,29 +1,87 @@
-[tool.poetry]
+[project]
 name = "impetus"
-version = "0.1.1"
-description = "An awesome tool/library benchmark LLM performance on all kinds of hardware!"
-authors = ["Dheemanth Manur <dheemanthmanur72@gmail.com>"]
+version = "0.2.0"
+description = "Comprehensive GPU profiling and characterization tool for LLM workloads on NVIDIA hardware"
+authors = [
+    { name = "Dheemanth Manur", email = "dheemanthmanur72@gmail.com" }
+]
 readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["llm", "gpu", "profiling", "benchmark", "nvidia", "cuda", "performance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Benchmark",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-transformers = "4.40.2"
-numpy = "1.26.4"
-datasets = "^2.20.0"
-evaluate = "^0.4.2"
-torch = "2.3.1"
-accelerate = "^0.31.0"
-click = "^8.1.7"
-tqdm = "^4.66.5"
-bitsandbytes = "^0.43.3"
+dependencies = [
+    "transformers>=4.40.0",
+    "numpy>=1.26.0",
+    "datasets>=2.20.0",
+    "evaluate>=0.4.2",
+    "torch>=2.3.0",
+    "torchvision>=0.18.0",
+    "accelerate>=0.31.0",
+    "click>=8.1.7",
+    "tqdm>=4.66.0",
+    "bitsandbytes>=0.43.0",
+    "nvidia-ml-py>=12.560.30",
+    "psutil>=6.0.0",
+    "rich>=13.7.0",
+    "plotly>=5.22.0",
+    "pandas>=2.2.0",
+]
 
+[project.optional-dependencies]
+# Backend support:
+# - HuggingFace: Default, works on all platforms (included in base)
+# - vLLM: Linux-only (requires Triton which has no Windows wheels)
+# - SGLang: Linux-only (requires Triton which has no Windows wheels)
+# - TensorRT-LLM: Coming in v0.3.0
+vllm = ["vllm>=0.11.0"]
+sglang = ["sglang>=0.1.0"]
+all-backends = ["vllm>=0.11.0", "sglang>=0.1.0"]
+dev = ["ipykernel>=6.29.5", "ruff>=0.4.0", "mypy>=1.10.0"]
 
-[tool.poetry.group.dev.dependencies]
-ipykernel = "^6.29.5"
+[project.scripts]
+impetus = "impetus.__main__:cli"
+
+[project.urls]
+Homepage = "https://github.com/dhmnr/impetus"
+Documentation = "https://github.com/dhmnr/impetus#readme"
+Repository = "https://github.com/dhmnr/impetus"
+Issues = "https://github.com/dhmnr/impetus/issues"
+Changelog = "https://github.com/dhmnr/impetus/blob/main/CHANGELOG.md"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry.scripts]
-impetus = 'impetus.__main__:cli'
+[tool.hatch.build.targets.wheel]
+packages = ["impetus"]
+
+# PyTorch CUDA support - uses CUDA builds on Linux/Windows, CPU on macOS
+# PyTorch 2.8.0+ supports CUDA 12.6-12.9 with automatic detection
+# For automatic CUDA detection, use: UV_TORCH_BACKEND=auto uv sync
+# See: https://docs.astral.sh/uv/guides/integration/pytorch/
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
